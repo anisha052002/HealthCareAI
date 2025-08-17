@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healthcare AI Knowledge Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white; 
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.1em; opacity: 0.9; }
+        .main-content { display: flex; min-height: 600px; }
+        .sidebar { 
+            width: 300px; 
+            background: #f8f9fa; 
+            padding: 30px;
+            border-right: 1px solid #dee2e6;
+        }
+        .chat-area { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column;
+            padding: 30px;
+        }
+        .upload-section { 
+            background: white;
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .upload-section:hover { border-color: #2980b9; background: #f8f9fa; }
+        .upload-section input[type="file"] { 
+            width: 100%; 
+            padding: 10px;
+            border: none;
+            background: transparent;
+        }
+        .btn { 
+            padding: 12px 24px; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; transform: translateY(-2px); }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #229954; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .chat-messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            border: 1px solid #dee2e6; 
+            border-radius: 8px; 
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fafafa;
+            max-height: 400px;
+        }
+        .message { 
+            margin-bottom: 20px; 
+            padding: 15px;
+            border-radius: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .message.user { 
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white; 
+            margin-left: 60px;
+        }
+        .message.assistant { 
+            background: #ecf0f1; 
+            color: #2c3e50;
+            margin-right: 60px;
+        }
+        .message-header { 
+            font-weight: bold; 
+            margin-bottom: 8px; 
+            display: flex;
+            align-items: center;
+        }
+        .message-header::before {
+            content: "👤";
+            margin-right: 8px;
+        }
+        .message.assistant .message-header::before {
+            content: "🤖";
+        }
+        .sources { 
+            margin-top: 15px; 
+            padding-top: 15px; 
+            border-top: 1px solid #bdc3c7;
+            font-size: 0.9em;
+        }
+        .source { 
+            background: white; 
+            padding: 8px; 
+            margin: 5px 0; 
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+        .input-group { 
+            display: flex; 
+            gap: 10px;
+        }
+        .input-group input { 
+            flex: 1; 
+            padding: 15px; 
+            border: 2px solid #dee2e6; 
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        .stats { 
+            background: linear-gradient(135deg, #1abc9c, #16a085);
+            color: white;
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 20px;
+        }
+        .stats h3 { margin-bottom: 10px; }
+        .loading { 
+            display: none; 
+            text-align: center; 
+            padding: 20px;
+            color: #7f8c8d;
+        }
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #3498db;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .alert { 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border-radius: 8px;
+            animation: fadeIn 0.5s ease-in;
+        }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 Healthcare AI Knowledge Assistant</h1>
+            <p>AI-Powered Document Analysis & Medical Knowledge Support</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="upload-section">
+                    <h3>📄 Upload Documents</h3>
+                    <input type="file" id="fileInput" accept=".txt,.pdf,.docx,.csv">
+                    <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+                </div>
+                
+                <div class="stats" id="stats">
+                    <h3>📊 System Stats</h3>
+                    <div id="statsContent">Loading...</div>
+                </div>
+                
+                <button class="btn btn-danger" onclick="clearMemory()">🗑️ Clear Chat</button>
+            </div>
+            
+            <div class="chat-area">
+                <div id="messages" class="chat-messages">
+                    <div class="message assistant">
+                        <div class="message-header">Healthcare AI Assistant</div>
+                        <div>Welcome! I'm your healthcare knowledge assistant. Upload medical documents and ask questions to get AI-powered insights. I can help you understand medical information, but remember that this is for informational purposes only and should not replace professional medical advice.</div>
+                    </div>
+                </div>
+                
+                <div class="loading" id="loading">Processing your request...</div>
+                
+                <div class="input-group">
+                    <input type="text" id="questionInput" placeholder="Ask a healthcare question..." 
+                           onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-success" onclick="askQuestion()">Ask</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load initial stats
+        loadStats();
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                askQuestion();
+            }
+        }
+        
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showAlert('Please select a file to upload.', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            showLoading(true);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.status === 'success') {
+                    showAlert(`Document uploaded successfully! Created ${data.chunks_created} chunks.`, 'success');
+                    fileInput.value = '';
+                    loadStats();
+                } else {
+                    showAlert(`Upload failed: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                showAlert('Upload failed: Network error', 'error');
+                console.error('Error:', error);
+            });
+        }
+        
+        function askQuestion() {
+            const questionInput = document.getElementById('questionInput');
+            const question = questionInput.value.trim();
+            
+            if (!question) {
+                showAlert('Please enter a question.', 'error');
+                return;
+            }
+            
+            // Add user message to chat
+            addMessage(question, 'user');
+            questionInput.value = '';
+            
+            showLoading(true);
+            
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({question: question})
+            })
+            .then(response => response.json())
+            .then(data => {
+                showLoading(false);
+                if (data.status === 'success') {
+                    addMessage(data.answer, 'assistant', data.sources);
+                } else {
+                    addMessage(`Error: ${data.message}`, 'assistant');
+                }
+            })
+            .catch(error => {
+                showLoading(false);
+                addMessage('Sorry, I encountered an error processing your question.', 'assistant');
+                console.error('Error:', error);
+            });
+        }
+        
+        function addMessage(content, sender, sources = []) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            let sourcesHtml = '';
+            if (sources && sources.length > 0) {
+                sourcesHtml = '<div class="sources"><strong>📚 Sources:</strong>';
+                sources.forEach(source => {
+                    sourcesHtml += `<div class="source"><strong>${source.source}</strong> - ${source.content}</div>`;
+                });
+                sourcesHtml += '</div>';
+            }
+            
+            messageDiv.innerHTML = `
+                <div class="message-header">${sender === 'user' ? 'You' : 'Healthcare AI Assistant'}</div>
+                <div>${content}</div>
+                ${sourcesHtml}
+            `;
+            
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function loadStats() {
+            fetch('/stats')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('statsContent').innerHTML = `
+                    <div><strong>Documents:</strong> ${data.database.total_chunks} chunks</div>
+                    <div><strong>Memory:</strong> ${data.memory_messages} messages</div>
+                    <div><strong>Status:</strong> ${data.status}</div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error loading stats:', error);
+            });
+        }
+        
+        function clearMemory() {
+            fetch('/clear', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById('messages').innerHTML = `
+                        <div class="message assistant">
+                            <div class="message-header">Healthcare AI Assistant</div>
+                            <div>Chat memory cleared. How can I help you today?</div>
+                        </div>
+                    `;
+                    showAlert('Chat memory cleared successfully!', 'success');
+                }
+            })
+            .catch(error => {
+                console.error('Error clearing memory:', error);
+            });
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+        }
+        
+        function showAlert(message, type) {
+            // Remove existing alerts
+            const existingAlerts = document.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.chat-area');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-remove alert after 5 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
